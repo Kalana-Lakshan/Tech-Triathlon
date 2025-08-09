@@ -29,7 +29,7 @@ app.use(express.static('public'));
 const db = mysql.createConnection({
   host: 'localhost',
   user: 'root',
-  password: '',
+  password: 'nawanjana',
   database: 'govbot_sl'
 });
 
@@ -69,6 +69,7 @@ function createTables() {
       name VARCHAR(100) NOT NULL,
       email VARCHAR(100),
       phone VARCHAR(15),
+      password VARCHAR(255) NOT NULL,
       language ENUM('sinhala', 'tamil', 'english') DEFAULT 'english',
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
@@ -153,6 +154,11 @@ function createTables() {
     }, 1000);
   }, 1000);
 }
+
+
+
+
+
 
 // Insert sample data
 function insertSampleData() {
@@ -354,7 +360,17 @@ app.get('/', (req, res) => {
 // User registration
 app.post('/api/register', async (req, res) => {
   try {
-    const { nic, name, email, phone, language } = req.body;
+    const { nic, name, email, phone, password, language } = req.body;
+    
+    // Validate required fields
+    if (!nic || !name || !password) {
+      return res.status(400).json({ error: 'NIC, name, and password are required' });
+    }
+    
+    // Validate password length
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters long' });
+    }
     
     // Check if user already exists
     db.query('SELECT * FROM users WHERE nic = ?', [nic], async (err, results) => {
@@ -366,51 +382,90 @@ app.post('/api/register', async (req, res) => {
         return res.status(400).json({ error: 'User already exists' });
       }
       
-      // Create new user
-      const newUser = { nic, name, email, phone, language };
-      db.query('INSERT INTO users SET ?', newUser, (err, result) => {
-        if (err) {
-          return res.status(500).json({ error: 'Error creating user' });
-        }
+      try {
+        // Hash the password
+        const saltRounds = 10;
+        const hashedPassword = await bcrypt.hash(password, saltRounds);
         
-        res.json({ 
-          message: 'User registered successfully',
-          user_id: result.insertId 
+        // Create new user
+        const newUser = { nic, name, email, phone, password: hashedPassword, language };
+        db.query('INSERT INTO users SET ?', newUser, (err, result) => {
+          if (err) {
+            console.error('Database insert error:', err);
+            return res.status(500).json({ error: 'Error creating user' });
+          }
+          
+          res.json({ 
+            message: 'User registered successfully',
+            user_id: result.insertId 
+          });
         });
-      });
+      } catch (hashError) {
+        console.error('Password hashing error:', hashError);
+        return res.status(500).json({ error: 'Error processing password' });
+      }
     });
   } catch (error) {
+    console.error('Registration error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
 // User login
-app.post('/api/login', (req, res) => {
-  const { nic } = req.body;
-  
-  db.query('SELECT * FROM users WHERE nic = ?', [nic], (err, results) => {
-    if (err) {
-      return res.status(500).json({ error: 'Database error' });
+app.post('/api/login', async (req, res) => {
+  try {
+    const { nic, password } = req.body;
+    
+    // Validate required fields
+    if (!nic || !password) {
+      return res.status(400).json({ error: 'NIC and password are required' });
     }
     
-    if (results.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-    
-    const user = results[0];
-    const token = jwt.sign({ user_id: user.id, nic: user.nic }, 'govbot_secret_key', { expiresIn: '24h' });
-    
-    res.json({ 
-      message: 'Login successful',
-      token,
-      user: {
-        id: user.id,
-        nic: user.nic,
-        name: user.name,
-        language: user.language
+    db.query('SELECT * FROM users WHERE nic = ?', [nic], async (err, results) => {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      
+      if (results.length === 0) {
+        return res.status(401).json({ error: 'Invalid NIC or password' });
+      }
+      
+      const user = results[0];
+      
+      try {
+        // Compare password with hashed password
+        const passwordMatch = await bcrypt.compare(password, user.password);
+        
+        if (!passwordMatch) {
+          return res.status(401).json({ error: 'Invalid NIC or password' });
+        }
+        
+        // Generate JWT token
+        const token = jwt.sign(
+          { user_id: user.id, nic: user.nic }, 
+          process.env.JWT_SECRET || 'govbot_secret_key', 
+          { expiresIn: '24h' }
+        );
+        
+        res.json({ 
+          message: 'Login successful',
+          token,
+          user: {
+            id: user.id,
+            nic: user.nic,
+            name: user.name,
+            language: user.language
+          }
+        });
+      } catch (compareError) {
+        console.error('Password comparison error:', compareError);
+        return res.status(500).json({ error: 'Authentication error' });
       }
     });
-  });
+  } catch (error) {
+    console.error('Login error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // Get services by category

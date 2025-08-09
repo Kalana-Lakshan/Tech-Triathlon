@@ -119,6 +119,39 @@ function setupEventListeners() {
             showServicesList(category.dataset.category);
         });
     });
+    
+    // Navigation menu
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const page = link.dataset.page;
+            navigateToPage(page);
+        });
+    });
+    
+    // Additional application buttons
+    const newApplicationFromList = document.getElementById('newApplicationFromList');
+    if (newApplicationFromList) {
+        newApplicationFromList.addEventListener('click', showServicesSection);
+    }
+    
+    // Complaint form close button
+    const closeComplaintFormBtn = document.getElementById('closeComplaintFormBtn');
+    if (closeComplaintFormBtn) {
+        closeComplaintFormBtn.addEventListener('click', hideComplaintForm);
+    }
+    
+    // Complaint form cancel button
+    const cancelComplaintBtn = document.getElementById('cancelComplaintBtn');
+    if (cancelComplaintBtn) {
+        cancelComplaintBtn.addEventListener('click', hideComplaintForm);
+    }
+    
+    // Complaint form submit
+    const complaintForm = document.getElementById('complaintForm');
+    if (complaintForm) {
+        complaintForm.addEventListener('submit', handleComplaintSubmit);
+    }
 }
 
 // Language management
@@ -182,9 +215,10 @@ function hideServicesSection() {
     }
 }
 
-function showApplicationSection(serviceName) {
+function showApplicationSection(serviceName, serviceId) {
     elements.applicationSection.style.display = 'block';
     document.getElementById('serviceName').value = serviceName;
+    document.getElementById('serviceId').value = serviceId; // Assuming serviceId is in the form
 }
 
 function hideApplicationSection() {
@@ -265,35 +299,45 @@ function showServicesList(category) {
 function displayServices(services) {
     elements.servicesGrid.innerHTML = '';
     
+    if (services.length === 0) {
+        elements.servicesGrid.innerHTML = '<p>No services found for this category.</p>';
+        return;
+    }
+    
     services.forEach(service => {
         const serviceDiv = document.createElement('div');
         serviceDiv.className = 'service-item';
         
         serviceDiv.innerHTML = `
-            <h4>${service.name}</h4>
-            <p>${service.description}</p>
+            <div class="service-header">
+                <h3>${service.name}</h3>
+                <span class="service-category">${service.category}</span>
+            </div>
+            <p class="service-description">${service.description}</p>
             <div class="service-details">
-                <div class="service-detail">
-                    <strong>Requirements:</strong>
-                    <span>${service.requirements}</span>
+                <div class="detail-item">
+                    <strong>Requirements:</strong> ${service.requirements}
                 </div>
-                <div class="service-detail">
-                    <strong>Fees:</strong>
-                    <span>Rs. ${service.fees}</span>
+                <div class="detail-item">
+                    <strong>Fees:</strong> Rs. ${service.fees}
                 </div>
-                <div class="service-detail">
-                    <strong>Processing Time:</strong>
-                    <span>${service.processing_time}</span>
+                <div class="detail-item">
+                    <strong>Processing Time:</strong> ${service.processing_time}
                 </div>
-                <div class="service-detail">
-                    <strong>Department:</strong>
-                    <span>${service.department}</span>
+                <div class="detail-item">
+                    <strong>Department:</strong> ${service.department}
                 </div>
             </div>
-            <button class="btn btn-primary" onclick="showApplicationSection('${service.name}')">
-                Apply Now
+            <button class="btn btn-primary apply-btn" data-service-name="${service.name}" data-service-id="${service.id}">
+                <i class="fas fa-edit"></i> Apply Now
             </button>
         `;
+        
+        // Add click event to apply button
+        const applyBtn = serviceDiv.querySelector('.apply-btn');
+        applyBtn.addEventListener('click', () => {
+            showApplicationSection(service.name, service.id);
+        });
         
         elements.servicesGrid.appendChild(serviceDiv);
     });
@@ -426,12 +470,21 @@ function handleApplicationSubmit(e) {
         return;
     }
     
+    const serviceName = document.getElementById('serviceName').value;
+    const serviceId = document.getElementById('serviceId').value;
+    const appointmentDate = document.getElementById('appointmentDate').value;
+    const documents = document.getElementById('documents').files;
+    
+    if (!serviceName || !serviceId || !appointmentDate) {
+        showNotification('Please fill in all required fields', 'error');
+        return;
+    }
+    
     const formData = new FormData();
     formData.append('user_id', currentUser.id);
-    formData.append('service_id', '1'); // This should be the actual service ID
-    formData.append('appointment_date', document.getElementById('appointmentDate').value);
+    formData.append('service_id', serviceId);
+    formData.append('appointment_date', appointmentDate);
     
-    const documents = document.getElementById('documents').files;
     for (let i = 0; i < documents.length; i++) {
         formData.append('documents', documents[i]);
     }
@@ -449,8 +502,9 @@ function handleApplicationSubmit(e) {
             hideApplicationSection();
             elements.applicationForm.reset();
             
-            // Refresh dashboard
+            // Refresh dashboard and applications
             loadUserApplications();
+            updateDashboardStats();
         }
     })
     .catch(error => {
@@ -458,6 +512,8 @@ function handleApplicationSubmit(e) {
         showNotification('Application submission failed. Please try again.', 'error');
     });
 }
+
+
 
 // Dashboard functionality
 function showDashboard() {
@@ -467,6 +523,7 @@ function showDashboard() {
     
     // Load user data
     loadUserApplications();
+    updateDashboardStats();
 }
 
 function showWelcomeSection() {
@@ -482,6 +539,7 @@ function loadUserApplications() {
         .then(response => response.json())
         .then(applications => {
             displayApplications(applications);
+            updateDashboardStats(applications);
         })
         .catch(error => {
             console.error('Error loading applications:', error);
@@ -509,12 +567,226 @@ function displayApplications(applications) {
         
         elements.applicationsList.appendChild(appDiv);
     });
+    
+    // Also update recent applications in dashboard
+    const recentApplications = document.getElementById('recentApplications');
+    if (recentApplications) {
+        recentApplications.innerHTML = '';
+        const recentApps = applications.slice(0, 3); // Show only 3 recent
+        
+        if (recentApps.length === 0) {
+            recentApplications.innerHTML = '<p>No applications yet.</p>';
+        } else {
+            recentApps.forEach(app => {
+                const appDiv = document.createElement('div');
+                appDiv.className = 'recent-application-item';
+                appDiv.innerHTML = `
+                    <div class="recent-app-info">
+                        <h4>${app.service_name}</h4>
+                        <p>${app.reference_number}</p>
+                    </div>
+                    <span class="status-${app.status}">${app.status}</span>
+                `;
+                recentApplications.appendChild(appDiv);
+            });
+        }
+    }
+}
+
+// Update dashboard statistics
+function updateDashboardStats(applications = []) {
+    if (!applications.length) {
+        // If no applications provided, fetch them
+        if (currentUser) {
+            fetch(`/api/applications/user/${currentUser.id}`)
+                .then(response => response.json())
+                .then(apps => updateDashboardStats(apps))
+                .catch(error => console.error('Error loading applications for stats:', error));
+        }
+        return;
+    }
+    
+    const totalApplications = applications.length;
+    const pendingApplications = applications.filter(app => app.status === 'pending').length;
+    const completedApplications = applications.filter(app => 
+        app.status === 'approved' || app.status === 'completed'
+    ).length;
+    
+    // Update dashboard stats
+    const totalEl = document.getElementById('totalApplications');
+    const pendingEl = document.getElementById('pendingApplications');
+    const completedEl = document.getElementById('completedApplications');
+    
+    if (totalEl) totalEl.textContent = totalApplications;
+    if (pendingEl) pendingEl.textContent = pendingApplications;
+    if (completedEl) completedEl.textContent = completedApplications;
 }
 
 // Complaint handling
 function showComplaintForm() {
     // This would show a complaint form modal
     showNotification('Complaint feature coming soon!', 'warning');
+}
+
+// Navigation function
+function navigateToPage(page) {
+    // Hide all sections first
+    const sections = [
+        'welcomeSection', 'dashboardSection', 'servicesSection', 
+        'applicationsSection', 'complaintsSection', 'chatSection', 
+        'profileSection', 'applicationSection', 'complaintFormSection'
+    ];
+    
+    sections.forEach(sectionId => {
+        const section = document.getElementById(sectionId);
+        if (section) {
+            section.style.display = 'none';
+        }
+    });
+    
+    // Remove active class from all nav links
+    document.querySelectorAll('.nav-link').forEach(link => {
+        link.classList.remove('active');
+    });
+    
+    // Add active class to clicked link
+    const activeLink = document.querySelector(`[data-page="${page}"]`);
+    if (activeLink) {
+        activeLink.classList.add('active');
+    }
+    
+    // Show the appropriate section
+    switch(page) {
+        case 'dashboard':
+            showDashboard();
+            break;
+        case 'services':
+            showServicesSection();
+            break;
+        case 'applications':
+            showApplicationsSection();
+            break;
+        case 'complaints':
+            showComplaintsSection();
+            break;
+        case 'chat':
+            showChatSection();
+            break;
+        case 'profile':
+            showProfileSection();
+            break;
+        default:
+            showWelcomeSection();
+    }
+}
+
+// Show applications section
+function showApplicationsSection() {
+    const applicationsSection = document.getElementById('applicationsSection');
+    if (applicationsSection) {
+        applicationsSection.style.display = 'block';
+        loadUserApplications();
+    }
+}
+
+// Show complaints section
+function showComplaintsSection() {
+    const complaintsSection = document.getElementById('complaintsSection');
+    if (complaintsSection) {
+        complaintsSection.style.display = 'block';
+        loadUserComplaints();
+    }
+}
+
+// Show profile section
+function showProfileSection() {
+    const profileSection = document.getElementById('profileSection');
+    if (profileSection) {
+        profileSection.style.display = 'block';
+        loadUserProfile();
+    }
+}
+
+// Load user complaints
+function loadUserComplaints() {
+    if (!currentUser) return;
+    
+    // This would fetch complaints from the API
+    // For now, show empty state
+    const complaintsList = document.getElementById('complaintsList');
+    if (complaintsList) {
+        complaintsList.innerHTML = '<p>No complaints found.</p>';
+    }
+}
+
+// Load user profile
+function loadUserProfile() {
+    if (!currentUser) return;
+    
+    const profileInfo = document.getElementById('profileInfo');
+    if (profileInfo) {
+        profileInfo.innerHTML = `
+            <div class="profile-field">
+                <label>NIC:</label>
+                <span>${currentUser.nic}</span>
+            </div>
+            <div class="profile-field">
+                <label>Name:</label>
+                <span>${currentUser.name}</span>
+            </div>
+            <div class="profile-field">
+                <label>Language:</label>
+                <span>${currentUser.language}</span>
+            </div>
+        `;
+    }
+}
+
+// Hide complaint form
+function hideComplaintForm() {
+    const complaintFormSection = document.getElementById('complaintFormSection');
+    if (complaintFormSection) {
+        complaintFormSection.style.display = 'none';
+    }
+}
+
+// Handle complaint submission
+function handleComplaintSubmit(e) {
+    e.preventDefault();
+    
+    if (!currentUser) {
+        showNotification('Please login to submit a complaint', 'error');
+        return;
+    }
+    
+    const subject = document.getElementById('complaintSubject').value;
+    const description = document.getElementById('complaintDescription').value;
+    
+    fetch('/api/complaints', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            user_id: currentUser.id,
+            subject: subject,
+            description: description
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            showNotification(data.error, 'error');
+        } else {
+            showNotification('Complaint submitted successfully!', 'success');
+            hideComplaintForm();
+            document.getElementById('complaintForm').reset();
+        }
+    })
+    .catch(error => {
+        console.error('Complaint submission error:', error);
+        showNotification('Complaint submission failed. Please try again.', 'error');
+    });
 }
 
 // Utility functions

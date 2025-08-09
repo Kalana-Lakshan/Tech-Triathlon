@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Benefits & Subsidies - GovBot</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="benefits.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="container">
+            <div class="logo">
+                <i class="fas fa-robot"></i>
+                <h1>GovBot</h1>
+                <span class="subtitle">Benefits & Subsidies</span>
+            </div>
+            <div class="header-controls">
+                <div class="language-selector">
+                    <select id="languageSelect">
+                        <option value="english">English</option>
+                        <option value="sinhala">සිංහල</option>
+                        <option value="tamil">தமிழ்</option>
+                    </select>
+                </div>
+                <div class="user-section" id="userSection" style="display: none;">
+                    <span id="userName"></span>
+                    <button id="logoutBtn" class="btn btn-secondary">Logout</button>
+                </div>
+                <a href="index.html" class="btn btn-secondary">
+                    <i class="fas fa-home"></i> Home
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="service-header">
+                <h1 data-english="Benefits & Subsidies" data-sinhala="ප්‍රතිලාභ සහ උපයෝග" data-tamil="நன்மைகள் மற்றும் மானியங்கள்">
+                    Benefits & Subsidies
+                </h1>
+                <p data-english="Apply for government benefits, subsidies, and financial assistance programs" data-sinhala="රජයේ ප්‍රතිලාභ, උපයෝග සහ මූල්‍ය සහාය වැඩසටහන් සඳහා අයදුම් කරන්න" data-tamil="அரசு நன்மைகள், மானியங்கள் மற்றும் நிதி உதவி திட்டங்களுக்கு விண்ணப்பிக்குங்கள்">
+                    Apply for government benefits, subsidies, and financial assistance programs
+                </p>
+            </div>
+
+            <!-- Service Categories -->
+            <div class="service-categories">
+                <div class="service-category" data-service="samurdhi">
+                    <div class="category-icon">
+                        <i class="fas fa-hand-holding-heart"></i>
+                    </div>
+                    <h3 data-english="Samurdhi Benefits" data-sinhala="සමුර්ධි ප්‍රතිලාභ" data-tamil="சமூர்த்தி நன்மைகள்">Samurdhi Benefits</h3>
+                    <p data-english="Financial assistance for low-income families" data-sinhala="අඩු ආදායම් පවුල් සඳහා මූල්‍ය සහාය" data-tamil="குறைந்த வருமான குடும்பங்களுக்கான நிதி உதவி">
+                        Financial assistance for low-income families
+                    </p>
+                    <button class="btn btn-primary apply-btn" data-service="Samurdhi Benefits">Apply Now</button>
+                </div>
+
+                <div class="service-category" data-service="pension">
+                    <div class="category-icon">
+                        <i class="fas fa-user-clock"></i>
+                    </div>
+                    <h3 data-english="Pension Schemes" data-sinhala="වැටුප් යෝජනා" data-tamil="ஓய்வூதிய திட்டங்கள்">Pension Schemes</h3>
+                    <p data-english="Old age, disability, and survivor pensions" data-sinhala="වයස්ගත, ආබාධිත සහ ජීවිත ආරක්ෂක වැටුප්" data-tamil="முதுமை, ஊனமுற்றோர் மற்றும் உயிர்வாழ்வோர் ஓய்வூதியம்">
+                        Old age, disability, and survivor pensions
+                    </p>
+                    <button class="btn btn-primary apply-btn" data-service="Pension Schemes">Apply Now</button>
+                </div>
+
+                <div class="service-category" data-service="agricultural">
+                    <div class="category-icon">
+                        <i class="fas fa-seedling"></i>
+                    </div>
+                    <h3 data-english="Agricultural Subsidies" data-sinhala="කෘෂිකාර්මික උපයෝග" data-tamil="வேளாண்மை மானியங்கள்">Agricultural Subsidies</h3>
+                    <p data-english="Fertilizer, seeds, and farming equipment subsidies" data-sinhala="රසායනික පොහොර, බීජ සහ ගොවිතැනේ උපකරණ සඳහා උපයෝග" data-tamil="உரங்கள், விதைகள் மற்றும் விவசாய உபகரணங்களுக்கான மானியங்கள்">
+                        Fertilizer, seeds, and farming equipment subsidies
+                    </p>
+                    <button class="btn btn-primary apply-btn" data-service="Agricultural Subsidies">Apply Now</button>
+                </div>
+
+                <div class="service-category" data-service="education">
+                    <div class="category-icon">
+                        <i class="fas fa-graduation-cap"></i>
+                    </div>
+                    <h3 data-english="Education Assistance" data-sinhala="අධ්‍යාපනික සහාය" data-tamil="கல்வி உதவி">Education Assistance</h3>
+                    <p data-english="Scholarships, school supplies, and tuition assistance" data-sinhala="ශිෂ්‍යත්ව, පාසල් භාණ්ඩ සහ ගුරුකුල ගාස්තු සහාය" data-tamil="படிப்புத்தொகை, பள்ளி பொருட்கள் மற்றும் கல்விக் கட்டண உதவி">
+                        Scholarships, school supplies, and tuition assistance
+                    </p>
+                    <button class="btn btn-primary apply-btn" data-service="Education Assistance">Apply Now</button>
+                </div>
+
+                <div class="service-category" data-service="healthcare">
+                    <div class="category-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <h3 data-english="Healthcare Benefits" data-sinhala="සෞඛ්‍ය සේවා ප්‍රතිලාභ" data-tamil="சுகாதார நன்மைகள்">Healthcare Benefits</h3>
+                    <p data-english="Medical insurance, medicine subsidies, and healthcare access" data-sinhala="වෛද්‍ය රක්ෂණ, ඖෂධ උපයෝග සහ සෞඛ්‍ය සේවා ප්‍රවේශය" data-tamil="மருத்துவ காப்பீடு, மருந்து மானியங்கள் மற்றும் சுகாதார சேவை அணுகல்">
+                        Medical insurance, medicine subsidies, and healthcare access
+                    </p>
+                    <button class="btn btn-primary apply-btn" data-service="Healthcare Benefits">Apply Now</button>
+                </div>
+
+                <div class="service-category" data-service="housing">
+                    <div class="category-icon">
+                        <i class="fas fa-home"></i>
+                    </div>
+                    <h3 data-english="Housing Assistance" data-sinhala="නිවාස සහාය" data-tamil="வீடு கட்டும் உதவி">Housing Assistance</h3>
+                    <p data-english="Housing loans, renovation grants, and emergency housing" data-sinhala="නිවාස ණය, ප්‍රතිසංස්කරණ උදව් සහ හදිසි නිවාස" data-tamil="வீடு கட்டும் கடன், புதுப்பித்தல் மானியங்கள் மற்றும் அவசர வீடு">
+                        Housing loans, renovation grants, and emergency housing
+                    </p>
+                    <button class="btn btn-primary apply-btn" data-service="Housing Assistance">Apply Now</button>
+                </div>
+            </div>
+
+            <!-- Application Form Section -->
+            <section class="application-section" id="applicationSection" style="display: none;">
+                <div class="section-header">
+                    <h2 id="applicationTitle" data-english="Apply for Benefits" data-sinhala="ප්‍රතිලාභ සඳහා අයදුම් කරන්න" data-tamil="நன்மைகளுக்கு விண்ணப்பிக்குங்கள்">
+                        Apply for Benefits
+                    </h2>
+                    <button class="close-application" id="closeApplicationBtn">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <form id="applicationForm" class="application-form">
+                    <div class="form-group">
+                        <label for="serviceName" data-english="Benefit Type:" data-sinhala="ප්‍රතිලාභ වර්ගය:" data-tamil="நன்மை வகை:">Benefit Type:</label>
+                        <input type="text" id="serviceName" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="applicantName" data-english="Applicant Name:" data-sinhala="අයදුම්කරුගේ නම:" data-tamil="விண்ணப்பதாரர் பெயர்:">Applicant Name:</label>
+                        <input type="text" id="applicantName" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="applicantNIC" data-english="NIC Number:" data-sinhala="NIC අංකය:" data-tamil="NIC எண்:">NIC Number:</label>
+                        <input type="text" id="applicantNIC" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="householdIncome" data-english="Monthly Household Income (LKR):" data-sinhala="මාසික පවුල් ආදායම (LKR):" data-tamil="மாதாந்திர குடும்ப வருமானம் (LKR):">Monthly Household Income (LKR):</label>
+                        <input type="number" id="householdIncome" required min="0" step="1000">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="familySize" data-english="Family Size:" data-sinhala="පවුල් ප්‍රමාණය:" data-tamil="குடும்ப அளவு:">Family Size:</label>
+                        <input type="number" id="familySize" required min="1" max="20">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="address" data-english="Residential Address:" data-sinhala="නිවාස ලිපිනය:" data-tamil="வசிப்பிட முகவரி:">Residential Address:</label>
+                        <textarea id="address" rows="3" required placeholder="Enter your complete residential address"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phoneNumber" data-english="Phone Number:" data-sinhala="දුරකථන අංකය:" data-tamil="தொலைபேசி எண்:">Phone Number:</label>
+                        <input type="tel" id="phoneNumber" required placeholder="Enter your phone number">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="documents" data-english="Upload Documents:" data-sinhala="ලේඛන උඩුගත කරන්න:" data-tamil="ஆவணங்களை பதிவேற்றுங்கள்:">Upload Documents:</label>
+                        <input type="file" id="documents" multiple accept=".pdf,.jpg,.jpeg,.png">
+                        <small data-english="Accepted formats: PDF, JPG, PNG (Max 5 files)" data-sinhala="පිළිගත් ආකෘති: PDF, JPG, PNG (උපරිම ගොනු 5ක්)" data-tamil="ஏற்றுக்கொள்ளப்பட்ட வடிவங்கள்: PDF, JPG, PNG (அதிகபட்சம் 5 கோப்புகள்)">Accepted formats: PDF, JPG, PNG (Max 5 files)</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="additionalInfo" data-english="Additional Information:" data-sinhala="අතිරේක තොරතුරු:" data-tamil="கூடுதல் தகவல்:">Additional Information:</label>
+                        <textarea id="additionalInfo" rows="3" placeholder="Any additional details about your situation or special circumstances"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="declaration" required>
+                            <span data-english="I declare that all information provided is true and accurate" data-sinhala="මම ප්‍රකාශ කරන්නේ ලබා දුන් සියලු තොරතුරු සත්‍ය සහ නිවැරදි බවයි" data-tamil="வழங்கப்பட்ட அனைத்து தகவல்களும் உண்மையானவை மற்றும் துல்லியமானவை என்பதை நான் உறுதிப்படுத்துகிறேன்">
+                                I declare that all information provided is true and accurate
+                            </span>
+                        </label>
+                    </div>
+                    
+                    <div class="form-buttons">
+                        <button type="submit" class="btn btn-primary" data-english="Submit Application" data-sinhala="අයදුම් ඉදිරිපත් කරන්න" data-tamil="விண்ணப்பத்தை சமர்ப்பிக்கவும்">Submit Application</button>
+                        <button type="button" class="btn btn-secondary" id="cancelApplicationBtn" data-english="Cancel" data-sinhala="අවලංගු කරන්න" data-tamil="ரத்து செய்">Cancel</button>
+                    </div>
+                </form>
+            </section>
+        </div>
+    </main>
+
+    <!-- Chat Interface -->
+    <div class="chat-widget" id="chatWidget">
+        <div class="chat-header" id="chatHeader">
+            <i class="fas fa-robot"></i>
+            <span data-english="Chat with GovBot" data-sinhala="GovBot සමඟ සංවාදය" data-tamil="GovBot உடன் அரட்டை">Chat with GovBot</span>
+            <button class="minimize-chat" id="minimizeChat">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+        <div class="chat-body" id="chatBody" style="display: none;">
+            <div class="chat-messages" id="chatMessages">
+                <div class="message bot-message">
+                    <div class="message-content">
+                        <i class="fas fa-robot"></i>
+                        <div class="message-text" data-english="Hello! I'm here to help you with benefits and subsidies applications. How can I assist you today?" data-sinhala="ආයුබෝවන්! ප්‍රතිලාභ සහ උපයෝග අයදුම් සඳහා මට ඔබට උදව් කළ හැකිය. අද මට ඔබට කෙසේ උදව් කළ හැකිද?" data-tamil="வணக்கம்! நன்மைகள் மற்றும் மானியங்கள் விண்ணப்பங்களுக்கு நான் உங்களுக்கு உதவ இங்கே இருக்கிறேன். இன்று நான் உங்களுக்கு எப்படி உதவ முடியும்?">
+                            Hello! I'm here to help you with benefits and subsidies applications. How can I assist you today?
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="chat-input">
+                <input type="text" id="chatInput" placeholder="Type your message..." data-english="Type your message..." data-sinhala="ඔබගේ පණිවිඩය ටයිප් කරන්න..." data-tamil="உங்கள் செய்தியை தட்டச்சு செய்யுங்கள்...">
+                <button id="sendMessageBtn">
+                    <i class="fas fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 GovBot - AI-Powered Government Assistant for Sri Lanka</p>
+        </div>
+    </footer>
+
+    <!-- Notification -->
+    <div id="notification" class="notification" style="display: none;">
+        <span id="notificationMessage"></span>
+        <button id="closeNotification">&times;</button>
+    </div>
+
+    <script src="benefits.js"></script>
+</body>
+</html>

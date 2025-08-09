@@ -113,11 +113,12 @@ function setupEventListeners() {
     elements.newApplicationBtn.addEventListener('click', showServicesSection);
     elements.submitComplaintBtn.addEventListener('click', showComplaintForm);
     
-    // Service categories
-    document.querySelectorAll('.service-category').forEach(category => {
-        category.addEventListener('click', () => {
+    // Service categories - using event delegation
+    document.addEventListener('click', (e) => {
+        if (e.target.closest('.service-category')) {
+            const category = e.target.closest('.service-category');
             showServicesList(category.dataset.category);
-        });
+        }
     });
     
     // Navigation menu
@@ -174,9 +175,25 @@ function updateLanguage(language) {
 
 // Section management
 function showSection(sectionId) {
+    console.log('showSection called with:', sectionId);
+    
     // Hide all sections
-    Object.values(elements).forEach(element => {
-        if (element && element.classList && element.classList.contains('section')) {
+    const sections = [
+        'welcomeSection',
+        'chatSection', 
+        'servicesSection',
+        'applicationSection',
+        'authSection',
+        'dashboardSection',
+        'applicationsSection',
+        'complaintsSection',
+        'profileSection',
+        'complaintFormSection'
+    ];
+    
+    sections.forEach(section => {
+        const element = document.getElementById(section);
+        if (element) {
             element.style.display = 'none';
         }
     });
@@ -184,7 +201,10 @@ function showSection(sectionId) {
     // Show the requested section
     const section = document.getElementById(sectionId);
     if (section) {
+        console.log('Showing section:', sectionId);
         section.style.display = 'block';
+    } else {
+        console.error('Section not found:', sectionId);
     }
 }
 
@@ -216,13 +236,197 @@ function hideServicesSection() {
 }
 
 function showApplicationSection(serviceName, serviceId) {
-    elements.applicationSection.style.display = 'block';
+    console.log('showApplicationSection called with:', serviceName, serviceId);
+    
+    // Set the service ID in the hidden input
+    document.getElementById('serviceId').value = serviceId;
     document.getElementById('serviceName').value = serviceName;
-    document.getElementById('serviceId').value = serviceId; // Assuming serviceId is in the form
+    
+    // Fetch service details to get form fields
+    fetch(`/api/services/id/${serviceId}`)
+        .then(response => response.json())
+        .then(service => {
+            console.log('Service details fetched:', service);
+            displayServiceInfo(service);
+            generateDynamicForm(service.form_fields);
+            showSection('applicationSection');
+        })
+        .catch(error => {
+            console.error('Error fetching service details:', error);
+            // Fallback to basic form
+            showSection('applicationSection');
+        });
+}
+
+function displayServiceInfo(service) {
+    const serviceInfo = document.getElementById('serviceInfo');
+    
+    serviceInfo.innerHTML = `
+        <h3>${service.name}</h3>
+        <p>${service.description}</p>
+        <div class="service-details">
+            <div class="detail-item">
+                <strong>Department:</strong>
+                <span>${service.department}</span>
+            </div>
+            <div class="detail-item">
+                <strong>Category:</strong>
+                <span>${service.category}</span>
+            </div>
+            <div class="detail-item">
+                <strong>Processing Time:</strong>
+                <span>${service.processing_time}</span>
+            </div>
+            <div class="detail-item">
+                <strong>Fees:</strong>
+                <span>Rs. ${service.fees.toFixed(2)}</span>
+            </div>
+            <div class="detail-item">
+                <strong>Requirements:</strong>
+                <span>${service.requirements}</span>
+            </div>
+            ${service.department_contact ? `
+            <div class="detail-item">
+                <strong>Contact:</strong>
+                <span>${service.department_contact}</span>
+            </div>
+            ` : ''}
+            ${service.department_email ? `
+            <div class="detail-item">
+                <strong>Email:</strong>
+                <span>${service.department_email}</span>
+            </div>
+            ` : ''}
+        </div>
+    `;
+}
+
+function generateDynamicForm(formFields) {
+    const formSections = document.getElementById('formSections');
+    formSections.innerHTML = '';
+    
+    if (!formFields || Object.keys(formFields).length === 0) {
+        // Fallback to basic form
+        formSections.innerHTML = `
+            <div class="form-section">
+                <h4>Personal Information</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fullName">Full Name *</label>
+                        <input type="text" id="fullName" name="fullName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="nicNumber">NIC Number *</label>
+                        <input type="text" id="nicNumber" name="nicNumber" required>
+                    </div>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    // Generate form sections based on form fields
+    Object.entries(formFields).forEach(([sectionName, fields]) => {
+        const section = document.createElement('div');
+        section.className = 'form-section';
+        
+        // Convert section name to readable title
+        const sectionTitle = sectionName.split('_').map(word => 
+            word.charAt(0).toUpperCase() + word.slice(1)
+        ).join(' ');
+        
+        section.innerHTML = `<h4>${sectionTitle}</h4>`;
+        
+        // Generate form rows with fields
+        const formRow = document.createElement('div');
+        formRow.className = 'form-row';
+        
+        fields.forEach((field, index) => {
+            const fieldName = field;
+            const fieldLabel = field.split('_').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+            
+            const fieldGroup = document.createElement('div');
+            fieldGroup.className = 'form-group';
+            
+            // Determine input type based on field name
+            let inputType = 'text';
+            let inputAttributes = '';
+            
+            if (fieldName.includes('date')) {
+                inputType = 'date';
+            } else if (fieldName.includes('phone') || fieldName.includes('contact')) {
+                inputType = 'tel';
+            } else if (fieldName.includes('email')) {
+                inputType = 'email';
+            } else if (fieldName.includes('description') || fieldName.includes('details') || fieldName.includes('notes')) {
+                inputType = 'textarea';
+            } else if (fieldName.includes('gender')) {
+                inputType = 'select';
+                inputAttributes = `
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                `;
+            } else if (fieldName.includes('marital_status')) {
+                inputType = 'select';
+                inputAttributes = `
+                    <option value="">Select Marital Status</option>
+                    <option value="single">Single</option>
+                    <option value="married">Married</option>
+                    <option value="divorced">Divorced</option>
+                    <option value="widowed">Widowed</option>
+                `;
+            }
+            
+            if (inputType === 'select') {
+                fieldGroup.innerHTML = `
+                    <label for="${fieldName}">${fieldLabel} *</label>
+                    <select id="${fieldName}" name="${fieldName}" required>
+                        ${inputAttributes}
+                    </select>
+                `;
+            } else if (inputType === 'textarea') {
+                fieldGroup.innerHTML = `
+                    <label for="${fieldName}">${fieldLabel} *</label>
+                    <textarea id="${fieldName}" name="${fieldName}" required></textarea>
+                `;
+            } else {
+                fieldGroup.innerHTML = `
+                    <label for="${fieldName}">${fieldLabel} *</label>
+                    <input type="${inputType}" id="${fieldName}" name="${fieldName}" required>
+                `;
+            }
+            
+            formRow.appendChild(fieldGroup);
+            
+            // Create new row after every 2 fields for better layout
+            if ((index + 1) % 2 === 0 && index < fields.length - 1) {
+                section.appendChild(formRow.cloneNode(true));
+                formRow.innerHTML = '';
+            }
+        });
+        
+        // Add remaining fields
+        if (formRow.children.length > 0) {
+            section.appendChild(formRow);
+        }
+        
+        formSections.appendChild(section);
+    });
 }
 
 function hideApplicationSection() {
-    elements.applicationSection.style.display = 'none';
+    showSection('dashboardSection');
+    
+    // Clear dynamic form sections
+    document.getElementById('formSections').innerHTML = '';
+    document.getElementById('serviceInfo').innerHTML = '';
+    
+    // Reset form
+    document.getElementById('applicationForm').reset();
 }
 
 // Chat functionality
@@ -281,6 +485,8 @@ function addMessageToChat(message, sender) {
 
 // Services functionality
 function showServicesList(category) {
+    console.log('showServicesList called with category:', category);
+    
     elements.servicesList.style.display = 'block';
     elements.selectedCategoryTitle.textContent = category;
     
@@ -288,6 +494,7 @@ function showServicesList(category) {
     fetch(`/api/services/${encodeURIComponent(category)}`)
         .then(response => response.json())
         .then(services => {
+            console.log('Services fetched for category:', category, services);
             displayServices(services);
         })
         .catch(error => {
@@ -336,6 +543,7 @@ function displayServices(services) {
         // Add click event to apply button
         const applyBtn = serviceDiv.querySelector('.apply-btn');
         applyBtn.addEventListener('click', () => {
+            console.log('Service card clicked:', service.name, service.id);
             showApplicationSection(service.name, service.id);
         });
         
@@ -465,29 +673,45 @@ function switchAuthTab(tab) {
 function handleApplicationSubmit(e) {
     e.preventDefault();
     
-    if (!currentUser) {
-        showNotification('Please login to submit an application', 'error');
-        return;
-    }
-    
-    const serviceName = document.getElementById('serviceName').value;
     const serviceId = document.getElementById('serviceId').value;
     const appointmentDate = document.getElementById('appointmentDate').value;
     const documents = document.getElementById('documents').files;
     
-    if (!serviceName || !serviceId || !appointmentDate) {
+    if (!serviceId || !appointmentDate) {
         showNotification('Please fill in all required fields', 'error');
         return;
     }
     
+    // Collect all form data from dynamic fields
     const formData = new FormData();
     formData.append('user_id', currentUser.id);
     formData.append('service_id', serviceId);
     formData.append('appointment_date', appointmentDate);
     
+    // Collect dynamic form fields
+    const dynamicFormData = {};
+    const formSections = document.getElementById('formSections');
+    const formFields = formSections.querySelectorAll('input, select, textarea');
+    
+    formFields.forEach(field => {
+        if (field.name && field.value) {
+            dynamicFormData[field.name] = field.value;
+        }
+    });
+    
+    // Add form data to FormData
+    formData.append('form_data', JSON.stringify(dynamicFormData));
+    
+    // Add documents
     for (let i = 0; i < documents.length; i++) {
         formData.append('documents', documents[i]);
     }
+    
+    // Show loading state
+    const submitBtn = e.target.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+    submitBtn.disabled = true;
     
     fetch('/api/applications', {
         method: 'POST',
@@ -496,20 +720,24 @@ function handleApplicationSubmit(e) {
     .then(response => response.json())
     .then(data => {
         if (data.error) {
-            showNotification(data.error, 'error');
-        } else {
-            showNotification(`Application submitted successfully! Reference: ${data.reference_number}`, 'success');
-            hideApplicationSection();
-            elements.applicationForm.reset();
-            
-            // Refresh dashboard and applications
-            loadUserApplications();
-            updateDashboardStats();
+            throw new Error(data.error);
         }
+        
+        showNotification(`Application submitted successfully! Reference: ${data.reference_number}`, 'success');
+        hideApplicationSection();
+        updateDashboardStats();
+        
+        // Reset form
+        document.getElementById('applicationForm').reset();
     })
     .catch(error => {
-        console.error('Application submission error:', error);
-        showNotification('Application submission failed. Please try again.', 'error');
+        console.error('Error submitting application:', error);
+        showNotification(error.message || 'Error submitting application', 'error');
+    })
+    .finally(() => {
+        // Restore button state
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
     });
 }
 

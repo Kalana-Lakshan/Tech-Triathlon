@@ -61,6 +61,10 @@
                     <i class="fas fa-user"></i>
                     <span data-english="Profile" data-sinhala="පැතිකඩ" data-tamil="சுயவிவரம்">Profile</span>
                 </a></li>
+                <li><a href="benefits.html" class="nav-link" target="_blank">
+                    <i class="fas fa-gift"></i>
+                    <span data-english="Benefits" data-sinhala="සුභපතන" data-tamil="நன்மைகள்">Benefits</span>
+                </a></li>
             </ul>
         </div>
     </nav>
@@ -222,6 +226,7 @@
                 </div>
                 
                 <div class="service-categories">
+                    <a href="documents.html" style="text-decoration: none; color: inherit;">
                     <div class="service-category" data-category="Documents & Certificates">
                         <div class="category-icon">
                             <i class="fas fa-id-card"></i>
@@ -233,7 +238,8 @@
                             NIC, Passport, Birth Certificate, Marriage Certificate
                         </p>
                     </div>
-                    
+                </a>
+                    <a href="benefits.html" style="text-decoration: none; color: inherit;">
                     <div class="service-category" data-category="Benefits & Subsidies">
                         <div class="category-icon">
                             <i class="fas fa-hand-holding-heart"></i>
@@ -245,7 +251,9 @@
                             Samurdhi, Pensions, Agricultural Subsidies
                         </p>
                     </div>
+                    </a>
                     
+                    <a href="business-services.html" style="text-decoration: none; color: inherit;">
                     <div class="service-category" data-category="Business Services">
                         <div class="category-icon">
                             <i class="fas fa-briefcase"></i>
@@ -257,7 +265,9 @@
                             Business Registration, Trade Licenses, Tax Filing
                         </p>
                     </div>
+                </a>
                     
+                <a href="healthcare-services.html" style="text-decoration: none; color: inherit;">
                     <div class="service-category" data-category="Healthcare Services">
                         <div class="category-icon">
                             <i class="fas fa-heartbeat"></i>
@@ -269,6 +279,7 @@
                             Health Insurance, Medical Appointments, Medical Devices
                         </p>
                     </div>
+                    </a>
                 </div>
                 
                 <div class="services-list" id="servicesList" style="display: none;">
@@ -415,29 +426,36 @@
                     </button>
                 </div>
                 
-                <form id="applicationForm" class="application-form">
-                    <div class="form-group">
-                        <label for="serviceName" data-english="Service:" data-sinhala="සේවාව:" data-tamil="சேவை:">Service:</label>
-                        <input type="text" id="serviceName" readonly>
+                <div class="application-content">
+                    <div class="service-info" id="serviceInfo">
+                        <!-- Service information will be displayed here -->
+                    </div>
+                    
+                    <form id="applicationForm" class="application-form">
                         <input type="hidden" id="serviceId">
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="appointmentDate" data-english="Preferred Appointment Date:" data-sinhala="අපේක්ෂිත රැස්වීම් දිනය:" data-tamil="விரும்பிய நேர்காணல் தேதி:">Preferred Appointment Date:</label>
-                        <input type="datetime-local" id="appointmentDate" required>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="documents" data-english="Upload Documents:" data-sinhala="ලේඛන උඩුගත කරන්න:" data-tamil="ஆவணங்களை பதிவேற்றுங்கள்:">Upload Documents:</label>
-                        <input type="file" id="documents" multiple accept=".pdf,.jpg,.jpeg,.png">
-                        <small data-english="Accepted formats: PDF, JPG, PNG (Max 5 files)" data-sinhala="පිළිගත් ආකෘති: PDF, JPG, PNG (උපරිම ගොනු 5ක්)" data-tamil="ஏற்றுக்கொள்ளப்பட்ட வடிவங்கள்: PDF, JPG, PNG (அதிகபட்சம் 5 கோப்புகள்)">Accepted formats: PDF, JPG, PNG (Max 5 files)</small>
-                    </div>
-                    
-                    <div class="form-buttons">
-                        <button type="submit" class="btn btn-primary" data-english="Submit Application" data-sinhala="අයදුම් ඉදිරිපත් කරන්න" data-tamil="விண்ணப்பத்தை சமர்ப்பிக்கவும்">Submit Application</button>
-                        <button type="button" class="btn btn-secondary" id="cancelApplicationBtn" data-english="Cancel" data-sinhala="අවලංගු කරන්න" data-tamil="ரத்து செய்">Cancel</button>
-                    </div>
-                </form>
+                        <input type="hidden" id="serviceName">
+                        
+                        <div class="form-sections" id="formSections">
+                            <!-- Dynamic form sections will be generated here -->
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="appointmentDate" data-english="Preferred Appointment Date:" data-sinhala="අපේක්ෂිත රැස්වීම් දිනය:" data-tamil="விரும்பிய நேர்காணல் தேதி:">Preferred Appointment Date:</label>
+                            <input type="datetime-local" id="appointmentDate" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="documents" data-english="Upload Documents:" data-sinhala="ලේඛන උඩුගත කරන්න:" data-tamil="ஆவணங்களை பதிவேற்றுங்கள்:">Upload Documents:</label>
+                            <input type="file" id="documents" multiple accept=".pdf,.jpg,.jpeg,.png">
+                            <small data-english="Accepted formats: PDF, JPG, PNG (Max 5 files)" data-sinhala="පිළිගත් ආකෘති: PDF, JPG, PNG (උපරිම ගොනු 5ක්)" data-tamil="ஏற்றுக்கொள்ளப்பட்ட வடிவங்கள்: PDF, JPG, PNG (அதிகபட்சம் 5 கோப்புகள்)">Accepted formats: PDF, JPG, PNG (Max 5 files)</small>
+                        </div>
+                        
+                        <div class="form-buttons">
+                            <button type="submit" class="btn btn-primary" data-english="Submit Application" data-sinhala="අයදුම් ඉදිරිපත් කරන්න" data-tamil="விண்ணப்பத்தை சமர்ப்பிக்கவும்">Submit Application</button>
+                            <button type="button" class="btn btn-secondary" id="cancelApplicationBtn" data-english="Cancel" data-sinhala="අවලංගු කරන්න" data-tamil="ரத்து செய்">Cancel</button>
+                        </div>
+                    </form>
+                </div>
             </section>
 
             <!-- Complaint Form -->

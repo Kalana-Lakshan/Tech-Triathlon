@@ -44,8 +44,26 @@ db.connect((err) => {
 
 // Create database tables
 function createTables() {
+  // First, drop existing tables to ensure clean schema
+  const dropTables = [
+    'DROP TABLE IF EXISTS applications',
+    'DROP TABLE IF EXISTS complaints',
+    'DROP TABLE IF EXISTS chat_sessions',
+    'DROP TABLE IF EXISTS services',
+    'DROP TABLE IF EXISTS offices',
+    'DROP TABLE IF EXISTS users'
+  ];
+
+  // Drop tables first
+  dropTables.forEach(dropTable => {
+    db.query(dropTable, (err) => {
+      if (err) console.error('Error dropping table:', err);
+    });
+  });
+
+  // Create tables with new schema
   const tables = [
-    `CREATE TABLE IF NOT EXISTS users (
+    `CREATE TABLE users (
       id INT AUTO_INCREMENT PRIMARY KEY,
       nic VARCHAR(12) UNIQUE NOT NULL,
       name VARCHAR(100) NOT NULL,
@@ -55,7 +73,7 @@ function createTables() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
     
-    `CREATE TABLE IF NOT EXISTS services (
+    `CREATE TABLE services (
       id INT AUTO_INCREMENT PRIMARY KEY,
       category VARCHAR(100) NOT NULL,
       name VARCHAR(200) NOT NULL,
@@ -64,10 +82,13 @@ function createTables() {
       fees DECIMAL(10,2),
       processing_time VARCHAR(100),
       department VARCHAR(100),
+      form_fields JSON,
+      department_contact VARCHAR(15),
+      department_email VARCHAR(100),
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
     
-    `CREATE TABLE IF NOT EXISTS offices (
+    `CREATE TABLE offices (
       id INT AUTO_INCREMENT PRIMARY KEY,
       name VARCHAR(200) NOT NULL,
       department VARCHAR(100) NOT NULL,
@@ -81,7 +102,7 @@ function createTables() {
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`,
     
-    `CREATE TABLE IF NOT EXISTS applications (
+    `CREATE TABLE applications (
       id INT AUTO_INCREMENT PRIMARY KEY,
       user_id INT,
       service_id INT,
@@ -89,12 +110,14 @@ function createTables() {
       reference_number VARCHAR(20) UNIQUE,
       documents TEXT,
       appointment_date DATETIME,
+      form_data JSON,
+      department_notes TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id),
       FOREIGN KEY (service_id) REFERENCES services(id)
     )`,
     
-    `CREATE TABLE IF NOT EXISTS complaints (
+    `CREATE TABLE complaints (
       id INT AUTO_INCREMENT PRIMARY KEY,
       user_id INT,
       subject VARCHAR(200) NOT NULL,
@@ -105,7 +128,7 @@ function createTables() {
       FOREIGN KEY (user_id) REFERENCES users(id)
     )`,
     
-    `CREATE TABLE IF NOT EXISTS chat_sessions (
+    `CREATE TABLE chat_sessions (
       id INT AUTO_INCREMENT PRIMARY KEY,
       user_id INT,
       session_id VARCHAR(100) UNIQUE,
@@ -116,14 +139,19 @@ function createTables() {
     )`
   ];
 
-  tables.forEach(table => {
-    db.query(table, (err) => {
-      if (err) console.error('Error creating table:', err);
+  // Create tables after a short delay to ensure drops are complete
+  setTimeout(() => {
+    tables.forEach(table => {
+      db.query(table, (err) => {
+        if (err) console.error('Error creating table:', err);
+      });
     });
-  });
 
-  // Insert sample data
-  insertSampleData();
+    // Insert sample data after tables are created
+    setTimeout(() => {
+      insertSampleData();
+    }, 1000);
+  }, 1000);
 }
 
 // Insert sample data
@@ -136,7 +164,14 @@ function insertSampleData() {
       requirements: 'Old NIC, Passport size photos, Application form',
       fees: 500.00,
       processing_time: '7-10 working days',
-      department: 'Department of Registration of Persons'
+      department: 'Department of Registration of Persons',
+      form_fields: JSON.stringify({
+        personal_info: ['full_name', 'nic_number', 'date_of_birth', 'address', 'contact_number'],
+        documents: ['old_nic', 'passport_photos', 'application_form'],
+        additional_info: ['reason_for_renewal', 'emergency_contact']
+      }),
+      department_contact: '+94-11-2345678',
+      department_email: 'nic@dorp.gov.lk'
     },
     {
       category: 'Documents & Certificates',
@@ -145,7 +180,15 @@ function insertSampleData() {
       requirements: 'Parents ID, Hospital records, Application form',
       fees: 200.00,
       processing_time: '3-5 working days',
-      department: 'Department of Registration of Persons'
+      department: 'Department of Registration of Persons',
+      form_fields: JSON.stringify({
+        child_info: ['child_full_name', 'date_of_birth', 'place_of_birth', 'gender'],
+        parent_info: ['father_name', 'father_nic', 'mother_name', 'mother_nic'],
+        documents: ['hospital_records', 'parents_id', 'application_form'],
+        additional_info: ['marital_status_parents', 'witness_details']
+      }),
+      department_contact: '+94-11-2345678',
+      department_email: 'birth@dorp.gov.lk'
     },
     {
       category: 'Benefits & Subsidies',
@@ -154,7 +197,16 @@ function insertSampleData() {
       requirements: 'NIC, Income certificate, Application form',
       fees: 0.00,
       processing_time: '15-20 working days',
-      department: 'Ministry of Social Welfare'
+      department: 'Ministry of Social Welfare',
+      form_fields: JSON.stringify({
+        personal_info: ['full_name', 'nic_number', 'date_of_birth', 'address', 'contact_number'],
+        family_info: ['family_size', 'children_count', 'elderly_count', 'disabled_members'],
+        financial_info: ['monthly_income', 'income_source', 'expenses', 'assets'],
+        documents: ['nic', 'income_certificate', 'family_photos', 'application_form'],
+        additional_info: ['special_circumstances', 'previous_benefits']
+      }),
+      department_contact: '+94-11-3456789',
+      department_email: 'samurdhi@socialwelfare.gov.lk'
     },
     {
       category: 'Business Services',
@@ -163,7 +215,16 @@ function insertSampleData() {
       requirements: 'NIC, Business plan, Application form',
       fees: 2500.00,
       processing_time: '10-15 working days',
-      department: 'Department of Registrar of Companies'
+      department: 'Department of Registrar of Companies',
+      form_fields: JSON.stringify({
+        business_info: ['business_name', 'business_type', 'business_address', 'business_phone', 'business_email'],
+        owner_info: ['owner_name', 'owner_nic', 'owner_address', 'owner_contact'],
+        business_details: ['business_activities', 'employee_count', 'startup_capital', 'expected_revenue'],
+        documents: ['nic', 'business_plan', 'financial_statements', 'premises_agreement', 'application_form'],
+        additional_info: ['partnership_details', 'shareholder_info', 'tax_registration']
+      }),
+      department_contact: '+94-11-4567890',
+      department_email: 'business@roc.gov.lk'
     },
     {
       category: 'Healthcare Services',
@@ -172,7 +233,51 @@ function insertSampleData() {
       requirements: 'NIC, Medical certificate, Application form',
       fees: 1000.00,
       processing_time: '5-7 working days',
-      department: 'Ministry of Health'
+      department: 'Ministry of Health',
+      form_fields: JSON.stringify({
+        personal_info: ['full_name', 'nic_number', 'date_of_birth', 'address', 'contact_number'],
+        health_info: ['current_health_status', 'existing_conditions', 'medications', 'allergies'],
+        family_health: ['family_medical_history', 'genetic_conditions'],
+        documents: ['nic', 'medical_certificate', 'health_records', 'application_form'],
+        additional_info: ['preferred_hospital', 'emergency_contact', 'dependents']
+      }),
+      department_contact: '+94-11-5678901',
+      department_email: 'health@health.gov.lk'
+    },
+    {
+      category: 'Documents & Certificates',
+      name: 'Passport Application',
+      description: 'Apply for new passport or renewal',
+      requirements: 'NIC, Birth certificate, Photos, Application form',
+      fees: 1500.00,
+      processing_time: '10-15 working days',
+      department: 'Department of Immigration and Emigration',
+      form_fields: JSON.stringify({
+        personal_info: ['full_name', 'nic_number', 'date_of_birth', 'place_of_birth', 'address', 'contact_number'],
+        travel_info: ['purpose_of_travel', 'destination_countries', 'planned_dates', 'previous_passports'],
+        documents: ['nic', 'birth_certificate', 'passport_photos', 'application_form'],
+        additional_info: ['emergency_contact', 'employment_details', 'sponsor_info']
+      }),
+      department_contact: '+94-11-6789012',
+      department_email: 'passport@immigration.gov.lk'
+    },
+    {
+      category: 'Benefits & Subsidies',
+      name: 'Agricultural Subsidies',
+      description: 'Apply for agricultural subsidies and support',
+      requirements: 'NIC, Land ownership documents, Crop details, Application form',
+      fees: 0.00,
+      processing_time: '20-25 working days',
+      department: 'Ministry of Agriculture',
+      form_fields: JSON.stringify({
+        personal_info: ['full_name', 'nic_number', 'date_of_birth', 'address', 'contact_number'],
+        agricultural_info: ['land_size', 'crop_types', 'irrigation_facilities', 'farming_experience'],
+        financial_info: ['annual_income', 'loan_details', 'previous_subsidies'],
+        documents: ['nic', 'land_documents', 'crop_records', 'income_certificate', 'application_form'],
+        additional_info: ['special_requirements', 'cooperative_membership', 'training_needs']
+      }),
+      department_contact: '+94-11-7890123',
+      department_email: 'agriculture@agri.gov.lk'
     }
   ];
 
@@ -332,6 +437,34 @@ app.get('/api/services', (req, res) => {
   });
 });
 
+// Get service by ID with form fields
+app.get('/api/services/id/:id', (req, res) => {
+  const { id } = req.params;
+  
+  db.query('SELECT * FROM services WHERE id = ?', [id], (err, results) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    
+    if (results.length === 0) {
+      return res.status(404).json({ error: 'Service not found' });
+    }
+    
+    const service = results[0];
+    
+    // Parse JSON fields
+    try {
+      if (service.form_fields) {
+        service.form_fields = JSON.parse(service.form_fields);
+      }
+    } catch (e) {
+      service.form_fields = {};
+    }
+    
+    res.json(service);
+  });
+});
+
 // Get nearest offices
 app.get('/api/offices/nearest', (req, res) => {
   const { latitude, longitude, department } = req.query;
@@ -370,7 +503,7 @@ app.get('/api/offices/nearest', (req, res) => {
 // Submit application
 app.post('/api/applications', upload.array('documents', 5), (req, res) => {
   try {
-    const { user_id, service_id, appointment_date } = req.body;
+    const { user_id, service_id, appointment_date, form_data } = req.body;
     const documents = req.files ? req.files.map(f => f.filename).join(',') : '';
     
     // Generate reference number
@@ -381,7 +514,8 @@ app.post('/api/applications', upload.array('documents', 5), (req, res) => {
       service_id,
       appointment_date,
       documents,
-      reference_number
+      reference_number,
+      form_data: form_data ? JSON.stringify(form_data) : null
     };
     
     db.query('INSERT INTO applications SET ?', application, (err, result) => {

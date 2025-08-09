@@ -557,6 +557,14 @@ function handleLogin(e) {
     console.log('Login form submitted');
     
     const nic = document.getElementById('loginNic').value;
+    const password = document.getElementById('loginPassword').value;
+    
+    // Validate inputs
+    if (!nic || !password) {
+        showNotification('Please fill in all required fields', 'error');
+        return;
+    }
+    
     console.log('Login NIC:', nic);
     
     fetch('/api/login', {
@@ -564,7 +572,7 @@ function handleLogin(e) {
         headers: {
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ nic })
+        body: JSON.stringify({ nic, password })
     })
     .then(response => {
         console.log('Login response status:', response.status);
@@ -598,15 +606,42 @@ function handleRegister(e) {
     e.preventDefault();
     console.log('Registration form submitted');
     
+    const nic = document.getElementById('registerNic').value;
+    const name = document.getElementById('registerName').value;
+    const email = document.getElementById('registerEmail').value;
+    const phone = document.getElementById('registerPhone').value;
+    const password = document.getElementById('registerPassword').value;
+    const confirmPassword = document.getElementById('confirmPassword').value;
+    const language = document.getElementById('registerLanguage').value;
+    
+    // Validate required fields
+    if (!nic || !name || !password || !confirmPassword) {
+        showNotification('Please fill in all required fields', 'error');
+        return;
+    }
+    
+    // Validate password length
+    if (password.length < 6) {
+        showNotification('Password must be at least 6 characters long', 'error');
+        return;
+    }
+    
+    // Validate password confirmation
+    if (password !== confirmPassword) {
+        showNotification('Passwords do not match', 'error');
+        return;
+    }
+    
     const formData = {
-        nic: document.getElementById('registerNic').value,
-        name: document.getElementById('registerName').value,
-        email: document.getElementById('registerEmail').value,
-        phone: document.getElementById('registerPhone').value,
-        language: document.getElementById('registerLanguage').value
+        nic,
+        name,
+        email,
+        phone,
+        password,
+        language
     };
     
-    console.log('Form data:', formData);
+    console.log('Form data:', { ...formData, password: '[HIDDEN]' });
     
     fetch('/api/register', {
         method: 'POST',
